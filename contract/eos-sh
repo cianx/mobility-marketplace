@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+# set -x
+
+docker exec -it -w /project mm-eosio bash
+
