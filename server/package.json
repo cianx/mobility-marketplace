@@ -1,0 +1,11 @@
+{
+  "name": "mm-server",
+  "version": "1.0.0",
+  "description": "Mobility Marketplace server",
+  "main": "index.js",
+  "repository": "https://github.com/cianx/mobility-marketplace",
+  "license": "MIT",
+  "scripts": {
+    "start": "NODE_ENV=production node index.js"
+  }
+}
