@@ -15,25 +15,16 @@ public:
     mobilitymkt( eosio::name receiver, eosio::name code,
         eosio::datastream<const char*> ds ):
             eosio::contract(receiver, code, ds),
-            _balances(receiver, code.value),
             _tokens(receiver, code.value)
     {}
-
-
-    [[eosio::action]]
-    void hello( name user ) {
-       require_auth( user );
-       print( "hello, ", name{user} );
-    }
 
     [[eosio::action]]
     void issue( name user, name provider, string ticket_id, asset amount ) {
         /* inputs:
             ticket_id (id, sig)
             amount/price(eos)
-
         */
-       // require_auth( user );
+       require_auth( user );
        print( "issue, ", name{user} );
 
        // Verify offer is from valid user
@@ -80,15 +71,14 @@ public:
             eosio::print("modify _tokens status", key);
             auto itr = _tokens.find(key);
             if (itr != _tokens.end()) {
+                // Delete Token?
                 _tokens.modify(itr, get_self(), [&](auto& p) {
                     p.authorized = true;
                     // FIXME send funds
+                    // FIXME transfer eos from escrow to provider
                 });
             }
         }
-
-       // verify token exists
-       // transfer eos from escrow to provider
     }
 
 
@@ -100,35 +90,30 @@ public:
         if(from == _self || to != _self)
             return;
 
-        // const char* digest = "c0dfb9cd89a0feb765b93de6718e11c00dbe335d700f268a4084a220f294b71f";
-        // string sig("SIG_K1_K9vJsvFxMf1YAHQcKqmV68a3ttJoukBorWxjwuhtuohbrnqgLw28NAV2R5Xp1WdqnrbfEgRC8Ak8dwq9WZH25N9Kh1pWzw");
-        // string pub("EOS78yJxETkWfZF5Mjj4HQ5N5t6KnoCjnh767J1ufit7bVbL9EBSX");
-        // recover_key( (capi_checksum256*)digest, sig.c_str(), sig.size(), pub.c_str(), pub.size());
+        // FIXME decode bid from memo
+        // provider
 
-        // print("Sig verify!!!!\n");
+
+        // Signature verification of bids
+        string digest_str("c0dfb9cd89a0feb765b93de6718e11c00dbe335d700f268a4084a220f294b71f");
+        datastream<const char*> ds(digest_str.c_str(), digest_str.size());
+        capi_checksum256 digest;
+        ds >> digest;
+        string sig("SIG_K1_K9vJsvFxMf1YAHQcKqmV68a3ttJoukBorWxjwuhtuohbrnqgLw28NAV2R5Xp1WdqnrbfEgRC8Ak8dwq9WZH25N9Kh1pWzw");
+        string pub("EOS78yJxETkWfZF5Mjj4HQ5N5t6KnoCjnh767J1ufit7bVbL9EBSX");
+        assert_recover_key( &digest, sig.c_str(), sig.size(), pub.c_str(), pub.size());
+
+        print("Sig verify!!!!\n");
 
         // This should never happen as we ensured transfer action belongs to "infinicoinio" account
         // eosio_assert(quantity.symbol == inf_symbol, "The symbol does not match");
         eosio_assert(quantity.is_valid(), "The quantity is not valid");
         eosio_assert(quantity.amount > 0, "The amount must be positive");
 
-        // deposit_table deposits(_self, _self.value);
-        // auto deposits_itr = deposits.find(from.value);
-        // eosio_assert(deposits_itr != deposits.end(), "User does not have a deposit opened");
+        // FIXME Verify amount == bid amount.
 
-        // deposits.modify(deposits_itr, same_payer, [&](auto &row){
-        //     row.balance += quantity;
-        // });
+        //.call issue()
     }
-
-    struct [[eosio::table]] balance {
-        name owner;
-        asset amount;
-
-        uint64_t primary_key() const { return owner.value; }
-    };
-    typedef eosio::multi_index<"balance"_n, balance> balance_index;
-
 
     typedef uint64_t id_type;
     struct [[eosio::table]] token {
@@ -147,8 +132,6 @@ public:
                     indexed_by< "byowner"_n,
                         const_mem_fun< token,
                             uint64_t, &token::get_owner> > >;
-
-    balance_index _balances;
     token_index _tokens;
 
 };
@@ -156,7 +139,7 @@ public:
 //*
 extern "C" {
     void apply(uint64_t receiver, uint64_t code, uint64_t action) {
-        print( "apply, code:", code, " receiver", receiver, " mobilitymkt:", mobilitymkt_account.value, " eosio.token", "eosio.token"_n.value);
+        print( "apply, code:", code, " receiver", receiver, " mobilitymkt:", mobilitymkt_account.value, " eosio.token", "eosio.token"_n.value, "\n");
         if(code==receiver)
         {
             switch(action)
