@@ -19,6 +19,8 @@ cleos create account eosio mobilitymkt $PK -p eosio@active
 
 cleos create account eosio bob $PK -p eosio@active
 cleos create account eosio alice $PK -p eosio@active
+cleos create account eosio uber $PK -p eosio@active
+cleos create account eosio scooter $PK -p eosio@active
 
 cleos create account eosio eosio.token $EPK -p eosio@active
 

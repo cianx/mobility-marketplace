@@ -5,7 +5,7 @@
 using namespace eosio;
 using std::string;
 
-class mobilitymkt : public contract {
+class [[eosio::contract]] mobilitymkt : public contract {
 public:
     using contract::contract;
 
@@ -45,6 +45,7 @@ public:
         _tokens.emplace(get_self(), [&](auto& p) {
             p.id = _tokens.available_primary_key();
             p.owner = user;
+            p.provider = provider;
             p.value = amount;
             p.ticket_id = ticket_id;
             p.authorized = false;
@@ -52,32 +53,11 @@ public:
     }
 
     [[eosio::action]]
-    void list( name user ) {
-        /* inputs:
-            ticket_id (id, sig)
-            amount/price(eos)
-
-        */
-        // require_auth( user );
-        print( "List tokens, ", name{user} );
-        for(auto& item : _tokens) {
-            if (item.owner == user) {
-                print(item.id, ", ",
-                    name{item.owner}, ", ",
-                    item.ticket_id, ", ",
-                    item.value, ", ",
-                    item.authorized, ", ",
-                    "\n");
-            }
-        }
-    }
-
-    [[eosio::action]]
     void authorize(name user, string ticket_id) {
         /* inputs:
             token id
         */
-       // require_auth( user );
+       require_auth( user );
        print( "authorize, ", name{user} );
 
        // Use clunky search methodology from
@@ -122,6 +102,7 @@ public:
     struct [[eosio::table]] token {
         id_type id;
         name owner;
+        name provider;
         std::string ticket_id;
         asset value;
         bool authorized;
@@ -139,5 +120,5 @@ public:
     token_index _tokens;
 
 };
-EOSIO_DISPATCH( mobilitymkt, (authorize)(issue)(list))
+EOSIO_DISPATCH( mobilitymkt, (authorize)(issue))
 
