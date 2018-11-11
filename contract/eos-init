@@ -2,6 +2,8 @@
 
 set -x
 
+source ../mm-env
+
 cleos wallet create -f wallet-password
 PW=$(cat wallet-password)
 cleos wallet open

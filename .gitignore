@@ -1,7 +1,7 @@
-contract/mobilitymkt/public-key
-contract/mobilitymkt/wallet-password
-contract/mobilitymkt/*.wasm
-contract/mobilitymkt/*.api
+public-key
+wallet-password
+*.wasm
+*.abi
 server/yarn-error.log
 server/node_modules
 

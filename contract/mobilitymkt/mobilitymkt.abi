@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Sat Nov 10 17:43:09 2018",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Sat Nov 10 18:44:28 2018",
     "version": "eosio::abi/1.1",
     "structs": [
         {
@@ -9,16 +9,10 @@
                 {
                     "name": "user",
                     "type": "name"
-                }
-            ]
-        },
-        {
-            "name": "cancel",
-            "base": "",
-            "fields": [
+                },
                 {
-                    "name": "user",
-                    "type": "name"
+                    "name": "ticket_id",
+                    "type": "string"
                 }
             ]
         },
@@ -49,16 +43,6 @@
                     "type": "asset"
                 }
             ]
-        },
-        {
-            "name": "list",
-            "base": "",
-            "fields": [
-                {
-                    "name": "user",
-                    "type": "name"
-                }
-            ]
         }
     ],
     "types": [],
@@ -69,11 +53,6 @@
             "ricardian_contract": ""
         },
         {
-            "name": "cancel",
-            "type": "cancel",
-            "ricardian_contract": ""
-        },
-        {
             "name": "hello",
             "type": "hello",
             "ricardian_contract": ""
@@ -81,11 +60,6 @@
         {
             "name": "issue",
             "type": "issue",
-            "ricardian_contract": ""
-        },
-        {
-            "name": "list",
-            "type": "list",
             "ricardian_contract": ""
         }
     ],

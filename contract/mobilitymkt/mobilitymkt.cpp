@@ -47,29 +47,8 @@ public:
        // verify token exists
        // transfer eos from escrow to provider
     }
-    [[eosio::action]]
-    void cancel( name user, ticket_id ) {
-        /* inputs:
-            token id
-        */
-       require_auth( user );
-       print( "cancel, ", name{user} );
 
-       // transfer eos from escrow to user
-
-       // delete the token
-    }
-
-    [[eosio::action]]
-    void list( name user ) {
-       require_auth( user );
-       print( "list, ", name{user} );
-
-       // return list of user tokens.
-    }
-
-
-    TABLE balance {
+    struct [[eosio::table]] balance {
         name owner;
         asset amount;
 
@@ -77,7 +56,7 @@ public:
     };
 
     typedef uint64_t id_type;
-    TABLE token {
+    struct [[eosio::table]] token {
         id_type id;
         name owner;
         std::string token_id;
@@ -100,5 +79,5 @@ private:
     // token_index tokens;
 
 };
-EOSIO_DISPATCH( mobilitymkt, (authorize)(issue)(cancel)(list) )
+EOSIO_DISPATCH( mobilitymkt, (authorize)(issue))
 
