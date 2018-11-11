@@ -6,5 +6,14 @@ ALICE=alice@active
 BOB=bob@active
 
 
-cleos push action mobilitymkt issue '["bob", "alice", "ticket_id", "1000.0000 SYS"]' -p $BOB
-cleos get table mobilitymkt mobilitymkt tokens
+#cleos push action mobilitymkt issue '["bob", "alice", "ticket_id", "1000.0000 SYS"]' -p $BOB
+# cleos get table mobilitymkt mobilitymkt tokens
+
+cleos get currency balance eosio.token alice SYS
+
+cleos transfer "alice" 'mobilitymkt' "10.0000 SYS" "memo"
+
+echo "alice"
+cleos get currency balance eosio.token alice SYS
+echo "mobilitymkt"
+cleos get currency balance eosio.token mobilitymkt SYS

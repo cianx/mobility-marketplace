@@ -5,6 +5,8 @@
 using namespace eosio;
 using std::string;
 
+const name mobilitymkt_account = "mobilitymkt"_n;
+
 class [[eosio::contract]] mobilitymkt : public contract {
 public:
     using contract::contract;
@@ -89,6 +91,36 @@ public:
        // transfer eos from escrow to provider
     }
 
+
+    void deposit(name from, name to, asset quantity, std::string memo)
+    {
+        print( "deposit, ", name{from}, name{to}, "\n");
+
+        // In case the tokens are from us, or not to us, do nothing
+        if(from == _self || to != _self)
+            return;
+
+        // const char* digest = "c0dfb9cd89a0feb765b93de6718e11c00dbe335d700f268a4084a220f294b71f";
+        // string sig("SIG_K1_K9vJsvFxMf1YAHQcKqmV68a3ttJoukBorWxjwuhtuohbrnqgLw28NAV2R5Xp1WdqnrbfEgRC8Ak8dwq9WZH25N9Kh1pWzw");
+        // string pub("EOS78yJxETkWfZF5Mjj4HQ5N5t6KnoCjnh767J1ufit7bVbL9EBSX");
+        // recover_key( (capi_checksum256*)digest, sig.c_str(), sig.size(), pub.c_str(), pub.size());
+
+        // print("Sig verify!!!!\n");
+
+        // This should never happen as we ensured transfer action belongs to "infinicoinio" account
+        // eosio_assert(quantity.symbol == inf_symbol, "The symbol does not match");
+        eosio_assert(quantity.is_valid(), "The quantity is not valid");
+        eosio_assert(quantity.amount > 0, "The amount must be positive");
+
+        // deposit_table deposits(_self, _self.value);
+        // auto deposits_itr = deposits.find(from.value);
+        // eosio_assert(deposits_itr != deposits.end(), "User does not have a deposit opened");
+
+        // deposits.modify(deposits_itr, same_payer, [&](auto &row){
+        //     row.balance += quantity;
+        // });
+    }
+
     struct [[eosio::table]] balance {
         name owner;
         asset amount;
@@ -120,5 +152,24 @@ public:
     token_index _tokens;
 
 };
-EOSIO_DISPATCH( mobilitymkt, (authorize)(issue))
+//EOSIO_DISPATCH( mobilitymkt, (authorize)(issue))
+//*
+extern "C" {
+    void apply(uint64_t receiver, uint64_t code, uint64_t action) {
+        print( "apply, code:", code, " receiver", receiver, " mobilitymkt:", mobilitymkt_account.value, " eosio.token", "eosio.token"_n.value);
+        if(code==receiver)
+        {
+            switch(action)
+            {
+                EOSIO_DISPATCH_HELPER( mobilitymkt, (authorize)(issue) )
+            }
+        }
+        else if(code=="eosio.token"_n.value &&
+            receiver== mobilitymkt_account.value &&
+            action=="transfer"_n.value) {
+            execute_action( name(receiver), name(code), &mobilitymkt::deposit );
+        }
+    }
+};
+/**/
 
