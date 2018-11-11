@@ -8,14 +8,21 @@ import {
   TouchableOpacity,
   View,
   TouchableHighlight,
-  Keyboard
+  Keyboard,
+  AsyncStorage,
+  Alert,
+  YellowBox
 } from 'react-native';
-import { WebBrowser } from 'expo';
 import t from 'tcomb-form-native';
 import MapView, { AnimatedRegion, Animated, Marker } from 'react-native-maps';
 import MapViewDirections from 'react-native-maps-directions';
 
-import { getTransitBids } from '../services/transitService';
+
+import { getTransitBids, buyTicket, getInfo, getUserTokens } from '../services/transitService';
+
+YellowBox.ignoreWarnings(["*"]);
+console.disableYellowBox = true;
+
 
 const Form = t.form.Form;
 
@@ -53,22 +60,53 @@ export default class HomeScreen extends React.Component {
     this.state = {
       bids: [],
       selectedBid: null,
-      formValue: null
+      formValue: {
+        from: '598 Nimitz Dr Broadmoor, CA 94015',
+        to: 'Fisherman\'s Wharf'
+      }
     };
   }
 
   selectBid = (bidId) => {
     console.log('selectBid:', bidId);
-    this.setState({selectedBid: bidId});
+    this.setState({ selectedBid: bidId });
   }
 
-  buyTicket = (bid) => {
+  buyTicket = async (bid) => {
     console.log('To buy:', bid);
+    var tickets = await AsyncStorage.getItem('tickets');
+    tickets = tickets ? JSON.parse(tickets) : [];
+
+    // Add index
+    console.log('bid.legs.length', bid.legs.length);
+    for (var i = 0; i < bid.legs.length; i++) {
+      console.log('i:', i);
+      bid.legs[i]['index'] = tickets.length + i;
+    }
+
+    console.log('bid.legs:', bid.legs);
+
+    await Promise.all(bid.legs.map(async ticket => {
+      await buyTicket(ticket);
+      tickets.push(ticket);
+      return AsyncStorage.setItem('tickets', JSON.stringify(tickets));
+    }));
+
+    Alert.alert(
+      'Success',
+      'Tickets are purchased',
+      [                
+        {text: 'OK', onPress: () => console.log('OK Pressed')},
+      ],
+      { cancelable: false }
+    )    
+
+    console.log('getUserTokens', await getUserTokens());
   }
 
   getBids = async () => {
     // call getValue() to get the values of the form
-    var value = this.refs.form.getValue();    
+    var value = this.refs.form.getValue();
     if (value) { // if validation fails, value will be null
       const { from, to } = value;
       const { bids } = await getTransitBids(from, to);
@@ -92,8 +130,8 @@ export default class HomeScreen extends React.Component {
       <View style={styles.bids}>
         <Text>Transit options:</Text>
         {bids.map((bid, index) => (
-          <TouchableHighlight style={ index === selectedBid ? styles.selectedBid : styles.bid} key={index} onPress={this.selectBid.bind(this, index)}>
-            <Text>{index+1}. total fare: ${bid.fare / 100}, legs: {bid.legs.length}</Text>
+          <TouchableHighlight style={index === selectedBid ? styles.selectedBid : styles.bid} key={index} onPress={this.selectBid.bind(this, index)}>
+            <Text>{index + 1}. total fare: ${bid.fare / 100}, legs: {bid.legs.length}</Text>
           </TouchableHighlight>
         ))}
       </View>
@@ -107,8 +145,8 @@ export default class HomeScreen extends React.Component {
 
     return (
       <TouchableHighlight style={styles.button} onPress={this.buyTicket.bind(this, bid)} underlayColor='#99d9f4'>
-        <Text style={styles.buttonText}>Buy Ticket</Text>
-      </TouchableHighlight> 
+        <Text style={styles.buttonText}>Buy Tickets</Text>
+      </TouchableHighlight>
     )
   }
 
