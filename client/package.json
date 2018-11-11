@@ -14,10 +14,14 @@
   },
   "dependencies": {
     "@expo/samples": "2.1.1",
+    "eosjs": "^20.0.0-beta2",
     "expo": "^31.0.2",
     "react": "16.5.0",
     "react-native": "https://github.com/expo/react-native/archive/sdk-31.0.0.tar.gz",
-    "react-navigation": "^2.18.2"
+    "react-native-maps": "^0.22.1",
+    "react-native-maps-directions": "^1.6.0",
+    "react-navigation": "^2.18.2",
+    "tcomb-form-native": "^0.6.20"
   },
   "devDependencies": {
     "babel-preset-expo": "^5.0.0",
