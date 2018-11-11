@@ -1,7 +1,8 @@
-public-key
+*public-key
 wallet-password
 *.wasm
 *.abi
 server/yarn-error.log
 server/node_modules
+pitch.txt
 

@@ -11,12 +11,21 @@ cleos wallet unlock --password $PW
 cleos wallet create_key | awk -F\" '{ print $2 }' > public-key
 PK=$(cat public-key)
 cleos wallet import --private-key 5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3
+cleos wallet create_key | awk -F\" '{ print $2 }' > eosio-public-key
+EPK=$(cat eosio-public-key)
 
 cleos create account eosio mobilitymkt $PK -p eosio@active
 
 
 cleos create account eosio bob $PK -p eosio@active
 cleos create account eosio alice $PK -p eosio@active
+
+cleos create account eosio eosio.token $EPK -p eosio@active
+
+cleos set contract eosio.token /contracts/eosio.token -p eosio.token
+cleos push action eosio.token create '["eosio","1000000000000.0000 SYS"]' -p eosio.token
+cleos push action eosio.token issue '["alice","100000.0000 SYS","memo"]' -p eosio
+cleos push action eosio.token issue '["bob","100000.0000 SYS","memo"]' -p eosio
 
 cd mobilitymkt
 make deploy
