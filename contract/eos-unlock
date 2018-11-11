@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -x
+
+source ../mm-env
+
+PW=$(cat wallet-password)
+cleos wallet unlock --password $PW

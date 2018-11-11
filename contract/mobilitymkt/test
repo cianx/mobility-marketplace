@@ -1,0 +1,10 @@
+#!/bin/bash
+
+source ../../mm-env
+
+ALICE=alice@active
+BOB=bob@active
+
+
+cleos push action mobilitymkt issue '["bob", "alice", "ticket_id", "1000.0000 SYS"]' -p $BOB
+cleos get table mobilitymkt mobilitymkt tokens
