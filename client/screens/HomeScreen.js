@@ -7,182 +7,211 @@ import {
   Text,
   TouchableOpacity,
   View,
+  TouchableHighlight,
+  Keyboard
 } from 'react-native';
 import { WebBrowser } from 'expo';
+import t from 'tcomb-form-native';
+import MapView, { AnimatedRegion, Animated, Marker } from 'react-native-maps';
+import MapViewDirections from 'react-native-maps-directions';
 
-import { MonoText } from '../components/StyledText';
+import { getTransitBids } from '../services/transitService';
+
+const Form = t.form.Form;
+
+const TransitRequest = t.struct({
+  from: t.String,
+  to: t.String
+});
+
+const mapPathColors = [
+  '#0F0D38',
+  '#908BB2',
+  '#C78283',
+  '#0F0D38',
+  '#908BB2',
+  '#C78283',
+  '#0F0D38',
+  '#908BB2',
+  '#C78283'
+];
+
+const initialRegion = {
+  latitude: 37.74622194898244,
+  longitude: -122.44229556256883,
+  latitudeDelta: 0.14517848376367226,
+  longitudeDelta: 0.20502065997064278
+}
 
 export default class HomeScreen extends React.Component {
   static navigationOptions = {
     header: null,
   };
 
-  render() {
+  constructor(props) {
+    super(props);
+    this.state = {
+      bids: [],
+      selectedBid: null,
+      formValue: null
+    };
+  }
+
+  selectBid = (bidId) => {
+    console.log('selectBid:', bidId);
+    this.setState({selectedBid: bidId});
+  }
+
+  buyTicket = (bid) => {
+    console.log('To buy:', bid);
+  }
+
+  getBids = async () => {
+    // call getValue() to get the values of the form
+    var value = this.refs.form.getValue();    
+    if (value) { // if validation fails, value will be null
+      const { from, to } = value;
+      const { bids } = await getTransitBids(from, to);
+      this.setState({ bids, selectedBid: null, formValue: value });
+      Keyboard.dismiss();
+      // console.log(bids); // value here is an instance of Person
+    }
+  }
+
+  onRegionChange = (region) => {
+    console.log(region)
+    // this.setState({ region });
+  }
+
+  renderBids = () => {
+    const { bids, selectedBid } = this.state;
+    const showRoute = bids && bids.length > 0 && selectedBid !== null;
+    if (!bids || bids.length <= 0) return (<View></View>);
+
     return (
-      <View style={styles.container}>
-        <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-          <View style={styles.welcomeContainer}>
-            <Image
-              source={
-                __DEV__
-                  ? require('../assets/images/robot-dev.png')
-                  : require('../assets/images/robot-prod.png')
-              }
-              style={styles.welcomeImage}
-            />
-          </View>
-
-          <View style={styles.getStartedContainer}>
-            {this._maybeRenderDevelopmentModeWarning()}
-
-            <Text style={styles.getStartedText}>Get started by opening</Text>
-
-            <View style={[styles.codeHighlightContainer, styles.homeScreenFilename]}>
-              <MonoText style={styles.codeHighlightText}>screens/HomeScreen.js</MonoText>
-            </View>
-
-            <Text style={styles.getStartedText}>
-              Change this text and your app will automatically reload.
-            </Text>
-          </View>
-
-          <View style={styles.helpContainer}>
-            <TouchableOpacity onPress={this._handleHelpPress} style={styles.helpLink}>
-              <Text style={styles.helpLinkText}>Help, it didn’t automatically reload!</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-
-        <View style={styles.tabBarInfoContainer}>
-          <Text style={styles.tabBarInfoText}>This is a tab bar. You can edit it in:</Text>
-
-          <View style={[styles.codeHighlightContainer, styles.navigationFilename]}>
-            <MonoText style={styles.codeHighlightText}>navigation/MainTabNavigator.js</MonoText>
-          </View>
-        </View>
+      <View style={styles.bids}>
+        <Text>Transit options:</Text>
+        {bids.map((bid, index) => (
+          <TouchableHighlight style={ index === selectedBid ? styles.selectedBid : styles.bid} key={index} onPress={this.selectBid.bind(this, index)}>
+            <Text>{index+1}. total fare: ${bid.fare / 100}, legs: {bid.legs.length}</Text>
+          </TouchableHighlight>
+        ))}
       </View>
     );
   }
 
-  _maybeRenderDevelopmentModeWarning() {
-    if (__DEV__) {
-      const learnMoreButton = (
-        <Text onPress={this._handleLearnMorePress} style={styles.helpLinkText}>
-          Learn more
-        </Text>
-      );
+  renderBuyTicket = () => {
+    const { bids, selectedBid } = this.state;
+    if (!bids || bids.length <= 0 || selectedBid === null) return (<View></View>);
+    const bid = bids[selectedBid];
 
-      return (
-        <Text style={styles.developmentModeText}>
-          Development mode is enabled, your app will be slower but you can use useful development
-          tools. {learnMoreButton}
-        </Text>
-      );
-    } else {
-      return (
-        <Text style={styles.developmentModeText}>
-          You are not in development mode, your app will run at full speed.
-        </Text>
-      );
-    }
+    return (
+      <TouchableHighlight style={styles.button} onPress={this.buyTicket.bind(this, bid)} underlayColor='#99d9f4'>
+        <Text style={styles.buttonText}>Buy Ticket</Text>
+      </TouchableHighlight> 
+    )
   }
 
-  _handleLearnMorePress = () => {
-    WebBrowser.openBrowserAsync('https://docs.expo.io/versions/latest/guides/development-mode');
-  };
+  renderMap = () => {
+    const { bids, selectedBid } = this.state;
+    const showRoute = bids && bids.length > 0 && selectedBid !== null;
 
-  _handleHelpPress = () => {
-    WebBrowser.openBrowserAsync(
-      'https://docs.expo.io/versions/latest/guides/up-and-running.html#can-t-see-your-changes'
+    return (
+      <MapView
+        initialRegion={initialRegion}
+        style={styles.map}
+      >
+        {showRoute && bids[selectedBid].legs.map((leg, index) => (
+          <MapViewDirections
+            origin={{ latitude: leg.start_location.lat, longitude: leg.start_location.lng }}
+            destination={{ latitude: leg.end_location.lat, longitude: leg.end_location.lng }}
+            apikey={'AIzaSyCv-i_aypZfAOkXMeqU_8_gz1mdidniDCQ'}
+            strokeColor={mapPathColors[index]}
+            strokeWidth={3}
+            key={index}
+          />
+        ))}
+        {showRoute && bids[selectedBid].legs.map((leg, index) => (
+          <Marker
+            coordinate={{ latitude: leg.end_location.lat, longitude: leg.end_location.lng }}
+            title={leg.end_address}
+            key={index}
+          />
+        ))}
+      </MapView>
     );
-  };
+  }
+
+  render() {
+    return (
+      <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.contentContainer}>
+          <Form type={TransitRequest} ref="form" value={this.state.formValue} />
+          <TouchableHighlight style={styles.button} onPress={this.getBids} underlayColor='#99d9f4'>
+            <Text style={styles.buttonText}>Request</Text>
+          </TouchableHighlight>
+          {this.renderBids()}
+          {this.renderBuyTicket()}
+          {this.renderMap()}
+        </ScrollView>
+      </View>
+    );
+  }
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  developmentModeText: {
-    marginBottom: 20,
-    color: 'rgba(0,0,0,0.4)',
-    fontSize: 14,
-    lineHeight: 19,
-    textAlign: 'center',
+    justifyContent: 'center',
+    marginTop: 50,
+    padding: 20,
+    backgroundColor: '#ffffff',
   },
   contentContainer: {
     paddingTop: 30,
   },
-  welcomeContainer: {
-    alignItems: 'center',
+  buttonText: {
+    fontSize: 18,
+    color: 'white',
+    alignSelf: 'center'
+  },
+  button: {
+    height: 36,
+    backgroundColor: '#48BBEC',
+    borderColor: '#48BBEC',
+    borderWidth: 1,
+    borderRadius: 8,
+    marginBottom: 10,
+    alignSelf: 'stretch',
+    justifyContent: 'center'
+  },
+  map: {
+    alignSelf: 'stretch',
+    height: 300
+  },
+  bids: {
     marginTop: 10,
-    marginBottom: 20,
+    marginBottom: 10,
   },
-  welcomeImage: {
-    width: 100,
-    height: 80,
-    resizeMode: 'contain',
-    marginTop: 3,
-    marginLeft: -10,
+  selectedBid: {
+    height: 36,
+    backgroundColor: '#FAFAFF',
+    borderColor: '#30343F',
+    borderWidth: 1,
+    borderRadius: 8,
+    marginBottom: 10,
+    paddingLeft: 5,
+    alignSelf: 'stretch',
+    justifyContent: 'center'
   },
-  getStartedContainer: {
-    alignItems: 'center',
-    marginHorizontal: 50,
-  },
-  homeScreenFilename: {
-    marginVertical: 7,
-  },
-  codeHighlightText: {
-    color: 'rgba(96,100,109, 0.8)',
-  },
-  codeHighlightContainer: {
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    borderRadius: 3,
-    paddingHorizontal: 4,
-  },
-  getStartedText: {
-    fontSize: 17,
-    color: 'rgba(96,100,109, 1)',
-    lineHeight: 24,
-    textAlign: 'center',
-  },
-  tabBarInfoContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    ...Platform.select({
-      ios: {
-        shadowColor: 'black',
-        shadowOffset: { height: -3 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-      },
-      android: {
-        elevation: 20,
-      },
-    }),
-    alignItems: 'center',
-    backgroundColor: '#fbfbfb',
-    paddingVertical: 20,
-  },
-  tabBarInfoText: {
-    fontSize: 17,
-    color: 'rgba(96,100,109, 1)',
-    textAlign: 'center',
-  },
-  navigationFilename: {
-    marginTop: 5,
-  },
-  helpContainer: {
-    marginTop: 15,
-    alignItems: 'center',
-  },
-  helpLink: {
-    paddingVertical: 15,
-  },
-  helpLinkText: {
-    fontSize: 14,
-    color: '#2e78b7',
-  },
+  bid: {
+    height: 36,
+    backgroundColor: '#FAFAFF',
+    borderColor: '#FAFAFF',
+    borderWidth: 1,
+    borderRadius: 8,
+    marginBottom: 10,
+    paddingLeft: 5,
+    alignSelf: 'stretch',
+    justifyContent: 'center'
+  }
 });
