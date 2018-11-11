@@ -2,7 +2,7 @@ version: "3"
 
 services:
   nodeos:
-    container_name: mm-eosio
+    container_name: nodeos
     image: eosio/eos:v1.4.2
     volumes:
       - ./contract:/project
@@ -10,18 +10,34 @@ services:
     ports:
       - "5555:5555"
       - "7777:7777"
+    expose:
+      - "5555"
+      - "7777"
     stop_signal: SIGKILL
     command: /bin/bash -c "/project/eos-launch"
     tty: true
-  mm-server:
-    image: node:8-alpine
-    depends_on:
-      - nodeos
-    volumes:
-      - ./server:/project
-    working_dir: /project
-    ports:
-      - "3000:3000" # webpack-serve http
-    command: ash -c "yarn install && yarn start"
-    stop_signal: SIGKILL
-    tty: true
+  # mm-server:
+  #   image: node:8-alpine
+  #   depends_on:
+  #     - nodeos
+  #   volumes:
+  #     - ./server:/project
+  #   working_dir: /project
+  #   ports:
+  #     - "3000:3000" # webpack-serve http
+  #   command: ash -c "yarn install && yarn start"
+  #   stop_signal: SIGKILL
+  #   tty: true
+  # mm-init:
+  #   container_name: mm-init
+  #   depends_on:
+  #     - nodeos
+  #   image: eosio/eos:v1.4.2
+  #   volumes:
+  #     - .:/project
+  #   links:
+  #     - nodeos
+  #   working_dir: /project/contract
+  #   stop_signal: SIGKILL
+  #   command: /bin/bash -c "sleep infinity && /project/contract/eos-init"
+  #   tty: true

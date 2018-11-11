@@ -1,8 +1,16 @@
 #!/bin/bash
 
+set -e
 set -x
 
 source ../mm-env
+# #alias cleos='/opt/eosio/bin/cleos --url http://nodeos:7777 --wallet-url http://nodeos:5555'
+# cleos() {
+#     echo /opt/eosio/bin/cleos --url http://nodeos:7777 --wallet-url http://nodeos:5555 "$@"
+#     /opt/eosio/bin/cleos --url http://nodeos:7777 --wallet-url http://nodeos:5555 "$@"
+# }
+# export -f cleos
+
 
 cleos wallet create -f wallet-password
 PW=$(cat wallet-password)
@@ -22,12 +30,11 @@ cleos create account eosio alice $PK -p eosio@active
 cleos create account eosio uber $PK -p eosio@active
 cleos create account eosio scooter $PK -p eosio@active
 
+# eosio.token
 cleos create account eosio eosio.token $EPK -p eosio@active
-
 cleos set contract eosio.token /contracts/eosio.token -p eosio.token
 cleos push action eosio.token create '["eosio","1000000000000.0000 SYS"]' -p eosio.token
 cleos push action eosio.token issue '["alice","100000.0000 SYS","memo"]' -p eosio
 cleos push action eosio.token issue '["bob","100000.0000 SYS","memo"]' -p eosio
 
-cd mobilitymkt
-make deploy
+cleos set contract mobilitymkt /project/mobilitymkt --abi mobilitymkt.abi -p mobilitymkt@active
