@@ -1,0 +1,9 @@
+#!/bin/bash
+
+cleos() {
+    echo docker exec -it mm-eosio /opt/eosio/bin/cleos --url http://127.0.0.1:7777 --wallet-url http://127.0.0.1:5555 "$@"
+    docker exec -it mm-eosio /opt/eosio/bin/cleos --url http://127.0.0.1:7777 --wallet-url http://127.0.0.1:5555 "$@"
+}
+export -f cleos
+
+echo Mobility Marketplace Environment setup
